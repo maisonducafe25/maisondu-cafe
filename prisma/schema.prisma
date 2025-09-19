@@ -13,7 +13,108 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model TestMe {
-  id String @id @default(cuid()) @unique
-  name String
+
+model User {
+  id            String          @id @default(cuid()) @unique
+  name          String?
+  email         String          @unique
+  password_hash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile?
+}
+
+model Profile {
+  id            String          @id @default(cuid()) @unique
+  user_id String? @unique
+  user User? @relation(fields: [user_id], references: [id], onUpdate: Cascade)
+  first_name String
+  middle_name String?
+  last_name String
+  company_id String 
+
+  order Order[]
+  userRoles UserRole[]
+}
+
+model Role {
+  id            String          @id @default(cuid()) @unique
+  name String @unique
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  userRoles UserRole[]
+}
+
+model UserRole {
+  role_id String
+  profile_id String
+
+  role Role @relation(fields: [role_id], references: [id], onDelete: Restrict)
+  profile Profile @relation(fields: [profile_id], references: [id], onDelete: Restrict)
+
+  @@id([role_id, profile_id])
+}
+
+model MenuCategory {
+  id            String          @id @default(cuid()) @unique
+  name String @unique
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  menuItems MenuItem[]
+}
+
+model MenuItem {
+  id            String          @id @default(cuid()) @unique
+  name String @unique
+  description String?
+  price Decimal @db.Decimal(10, 2)
+  quantity Int @default(0)
+
+  category_id String
+  category MenuCategory @relation(fields: [category_id], references: [id], onUpdate: Cascade, onDelete: Restrict)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  order_id String
+  menu_item_id String
+  quantity Int
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+
+  @@id([order_id, menu_item_id])
+}
+
+model Order {
+  id            String          @id @default(cuid()) @unique
+  order_status OrderStatus @default(PENDING)
+  total_receive Decimal @db.Decimal(10, 2)
+  total_change Decimal @db.Decimal(10, 2)
+  total_amount Decimal @db.Decimal(10, 2)
+  is_paid Boolean
+  cashier_id String
+  profile Profile @relation(fields: [cashier_id], references: [id], onUpdate: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
 }
